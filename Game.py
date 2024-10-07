@@ -12,27 +12,27 @@ def main():  # Main function wrapping the game logic
     pygame.display.set_caption("Image Movement with WASD and Scrolling Camera")
 
     # Load the background and minimap images
-    large_image = pygame.image.load('material/newest_map.png')  # Background map
+    large_image = pygame.image.load('newest_map.png')  # Background map
     large_image_width, large_image_height = large_image.get_size()
-    minimap_image = pygame.image.load('material/MiniMap.png')  # Minimap
+    minimap_image = pygame.image.load('MiniMap.png')  # Minimap
     minimap_image = pygame.transform.scale(minimap_image, (400, 300))  # Resized minimap
 
     # Set up the camera and load the rocket images
     camera_rect = pygame.Rect(0, 0, screen_width, screen_height)
     rocket_images = [
-        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
-        pygame.transform.scale(pygame.image.load('material/Rover2_frame2.png'), (180, 180)),
-        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('Rover2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('Rover2_frame2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('Rover2.png'), (180, 180)),
     ]
 
     # Load arrow image for the minimap
     arrow_image = pygame.transform.scale(rocket_images[0], (20, 20))
 
     # Load the popup images for quadrants
-    BottomLeft_image = pygame.image.load('material/RoverSelfie.png')
-    TopLeft_image = pygame.image.load('material/Ascraeus_Mons.png')
-    BottomRight_image = pygame.image.load('material/Arsia_Mons.png')
-    TopRight_image = pygame.image.load('material/Pavonis_Mons.png')
+    BottomLeft_image = pygame.image.load('RoverSelfie.png')
+    TopLeft_image = pygame.image.load('Ascraeus_Mons.png')
+    BottomRight_image = pygame.image.load('Arsia_Mons.png')
+    TopRight_image = pygame.image.load('Pavonis_Mons.png')
 
     # Setup for rocket position and movement
     popup_image = BottomLeft_image
