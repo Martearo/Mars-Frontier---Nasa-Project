@@ -12,27 +12,27 @@ def main():  # Main function wrapping the game logic
     pygame.display.set_caption("Image Movement with WASD and Scrolling Camera")
 
     # Load the background and minimap images
-    large_image = pygame.image.load('newest_map.png')  # Background map
+    large_image = pygame.image.load('material/newest_map.png')  # Background map
     large_image_width, large_image_height = large_image.get_size()
-    minimap_image = pygame.image.load('MiniMap.png')  # Minimap
+    minimap_image = pygame.image.load('material/MiniMap.png')  # Minimap
     minimap_image = pygame.transform.scale(minimap_image, (400, 300))  # Resized minimap
 
     # Set up the camera and load the rocket images
     camera_rect = pygame.Rect(0, 0, screen_width, screen_height)
     rocket_images = [
-        pygame.transform.scale(pygame.image.load('Rover2.png'), (180, 180)),
-        pygame.transform.scale(pygame.image.load('Rover2_frame2.png'), (180, 180)),
-        pygame.transform.scale(pygame.image.load('Rover2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('material/Rover2_frame2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
     ]
 
     # Load arrow image for the minimap
     arrow_image = pygame.transform.scale(rocket_images[0], (20, 20))
 
     # Load the popup images for quadrants
-    BottomLeft_image = pygame.image.load('RoverSelfie.png')
-    TopLeft_image = pygame.image.load('Ascraeus_Mons.png')
-    BottomRight_image = pygame.image.load('Arsia_Mons.png')
-    TopRight_image = pygame.image.load('Pavonis_Mons.png')
+    BottomLeft_image = pygame.image.load('material/RoverSelfie.png')
+    TopLeft_image = pygame.image.load('material/Ascraeus_Mons.png')
+    BottomRight_image = pygame.image.load('material/Arsia_Mons.png')
+    TopRight_image = pygame.image.load('material/Pavonis_Mons.png')
 
     # Setup for rocket position and movement
     popup_image = BottomLeft_image
@@ -166,6 +166,8 @@ def main():  # Main function wrapping the game logic
 
         # Check pixel color on the minimap to trigger interactions
         minimap_player_pos = (minimap_player_x - minimap_rect.x, minimap_player_y - minimap_rect.y)
+
+        # Check if the player's position is within the minimap's boundaries
         if 0 <= minimap_player_pos[0] < minimap_image.get_width() and 0 <= minimap_player_pos[1] < minimap_image.get_height():
             current_pixel_color = minimap_image.get_at((minimap_player_pos[0], minimap_player_pos[1]))
         else:
@@ -174,19 +176,19 @@ def main():  # Main function wrapping the game logic
         # Handle quadrant image display logic
         if current_pixel_color[1] > 40:
             prompt_visible = True
-            screen_center_x = screen_width // 2
-            screen_center_y = screen_height // 2
-            player_screen_x = image_rect.centerx - camera_rect.left
-            player_screen_y = image_rect.centery - camera_rect.top
+            minimap_center_x = minimap_rect.width // 2
+            minimap_center_y = minimap_rect.height // 2
 
-            if player_screen_x <= screen_center_x and player_screen_y <= screen_center_y:
-                popup_image = TopLeft_image
-            elif player_screen_x > screen_center_x and player_screen_y <= screen_center_y:
-                popup_image = TopRight_image
-            elif player_screen_x < screen_center_x and player_screen_y > screen_center_y:
-                popup_image = BottomLeft_image
-            elif player_screen_x > screen_center_x and player_screen_y > screen_center_y:
-                popup_image = BottomRight_image
+            if minimap_player_pos[1] < minimap_center_y:  # Top half of the minimap
+                if minimap_player_pos[0] < minimap_center_x:
+                    popup_image = TopLeft_image
+                else:
+                    popup_image = TopRight_image
+            else:  # Bottom half of the minimap
+                if minimap_player_pos[0] < minimap_center_x:
+                   popup_image = BottomLeft_image
+                else:
+                    popup_image = BottomRight_image
         else:
             prompt_visible = False
 
