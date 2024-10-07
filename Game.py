@@ -166,6 +166,8 @@ def main():  # Main function wrapping the game logic
 
         # Check pixel color on the minimap to trigger interactions
         minimap_player_pos = (minimap_player_x - minimap_rect.x, minimap_player_y - minimap_rect.y)
+
+        # Check if the player's position is within the minimap's boundaries
         if 0 <= minimap_player_pos[0] < minimap_image.get_width() and 0 <= minimap_player_pos[1] < minimap_image.get_height():
             current_pixel_color = minimap_image.get_at((minimap_player_pos[0], minimap_player_pos[1]))
         else:
@@ -174,19 +176,19 @@ def main():  # Main function wrapping the game logic
         # Handle quadrant image display logic
         if current_pixel_color[1] > 40:
             prompt_visible = True
-            screen_center_x = screen_width // 2
-            screen_center_y = screen_height // 2
-            player_screen_x = image_rect.centerx - camera_rect.left
-            player_screen_y = image_rect.centery - camera_rect.top
+            minimap_center_x = minimap_rect.width // 2
+            minimap_center_y = minimap_rect.height // 2
 
-            if player_screen_x <= screen_center_x and player_screen_y <= screen_center_y:
-                popup_image = TopLeft_image
-            elif player_screen_x > screen_center_x and player_screen_y <= screen_center_y:
-                popup_image = TopRight_image
-            elif player_screen_x < screen_center_x and player_screen_y > screen_center_y:
-                popup_image = BottomLeft_image
-            elif player_screen_x > screen_center_x and player_screen_y > screen_center_y:
-                popup_image = BottomRight_image
+            if minimap_player_pos[1] < minimap_center_y:  # Top half of the minimap
+                if minimap_player_pos[0] < minimap_center_x:
+                    popup_image = TopLeft_image
+                else:
+                    popup_image = TopRight_image
+            else:  # Bottom half of the minimap
+                if minimap_player_pos[0] < minimap_center_x:
+                   popup_image = BottomLeft_image
+                else:
+                    popup_image = BottomRight_image
         else:
             prompt_visible = False
 
