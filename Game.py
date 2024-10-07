@@ -1,211 +1,225 @@
 import pygame
 import sys
 
-# Initialize Pygame
-pygame.init()
+def main():  # Main function wrapping the game logic
+    # Initialize Pygame
+    pygame.init()
+    info = pygame.display.Info()
 
-# Set up the display (this is the size of the player's view)
-screen_width = 800
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Image Movement with WASD and Scrolling Camera")
+    # Set up the display in fullscreen mode
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    screen_width, screen_height = screen.get_size()
+    pygame.display.set_caption("Image Movement with WASD and Scrolling Camera")
 
-# Load the large background image (this is the entire world)
-large_image = pygame.image.load('MainBG2.png')
-large_image_width, large_image_height = large_image.get_size()
+    # Load the background and minimap images
+    large_image = pygame.image.load('material/newest_map.png')  # Background map
+    large_image_width, large_image_height = large_image.get_size()
+    minimap_image = pygame.image.load('material/MiniMap.png')  # Minimap
+    minimap_image = pygame.transform.scale(minimap_image, (400, 300))  # Resized minimap
 
-# Load and resize the custom minimap image
-minimap_image = pygame.image.load('MiniMap.png')  # Load your custom minimap image
-minimap_image = pygame.transform.scale(minimap_image, (200, 150))  # Resize it as needed
+    # Set up the camera and load the rocket images
+    camera_rect = pygame.Rect(0, 0, screen_width, screen_height)
+    rocket_images = [
+        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('material/Rover2_frame2.png'), (180, 180)),
+        pygame.transform.scale(pygame.image.load('material/Rover2.png'), (180, 180)),
+    ]
 
-# Reduce the size of the camera (viewing area)
-camera_rect = pygame.Rect(0, 0, screen_width, screen_height)
+    # Load arrow image for the minimap
+    arrow_image = pygame.transform.scale(rocket_images[0], (20, 20))
 
-# Load and resize the player images (rocket)
-rocket_images = [
-    pygame.transform.scale(pygame.image.load('frame_0.png'), (96, 96)),  # First rocket image
-    pygame.transform.scale(pygame.image.load('frame_1.png'), (96, 96)),  # Second rocket image
-    pygame.transform.scale(pygame.image.load('frame_end.png'), (96, 96)),  # Third rocket image
-]
+    # Load the popup images for quadrants
+    BottomLeft_image = pygame.image.load('material/RoverSelfie.png')
+    TopLeft_image = pygame.image.load('material/Ascraeus_Mons.png')
+    BottomRight_image = pygame.image.load('material/Arsia_Mons.png')
+    TopRight_image = pygame.image.load('material/Pavonis_Mons.png')
 
-# Load and resize the arrow image for the minimap
-arrow_image = pygame.transform.scale(rocket_images[0], (20, 20))  # Arrow for minimap (using the first rocket image)
+    # Setup for rocket position and movement
+    popup_image = BottomLeft_image
+    image_index = 0
+    image_rect = rocket_images[image_index].get_rect()
+    image_rect.topleft = (large_image_width // 2, large_image_height // 2)
+    move_speed = 9
 
-# Load the image to display when pressing "E"
-popup_image = pygame.image.load('RoverSelfie.png')  # Replace with your image
-popup_image_rect = popup_image.get_rect(center=(screen_width // 2, screen_height // 2))
+    clock = pygame.time.Clock()
 
-image_index = 0  # To track which image to show
-image_rect = rocket_images[image_index].get_rect()  # Get the rect of the resized image
+    # Rotation and animation timing
+    rotation_angle = 0
+    image_change_time = 100
+    last_image_change = pygame.time.get_ticks()
 
-# Set the initial position of the player (inside the larger world)
-image_rect.topleft = (large_image_width // 2, large_image_height // 2)
+    # Prompt setup and minimap opacity
+    prompt_visible = False
+    prompt_text = 'Press E to interact!'
+    font = pygame.font.Font(None, 36)
+    minimap_alpha = 150
+    expanding_image = False
+    expansion_scale = 0.0
+    target_scale = 0.5
+    scaling_speed = 0.05
 
-# Define movement speed
-move_speed = 5
+    # Instruction text for player
+    instruction_font = pygame.font.Font(None, 36)
+    instruction_text = instruction_font.render("Press WASD to move", True, (255, 255, 255))
 
-# Create a clock object to control the frame rate
-clock = pygame.time.Clock()
+    # Main game loop
+    running = True
+    while running:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-# Initialize rotation angle
-rotation_angle = 0
+        keys = pygame.key.get_pressed()
 
-# Time for image change
-image_change_time = 100  # Time in milliseconds to change image
-last_image_change = pygame.time.get_ticks()  # Track the last image change time
-
-# Prompt variables
-prompt_visible = False  # To control the visibility of the prompt message
-prompt_text = 'Press E to interact!'  # The prompt message
-font = pygame.font.Font(None, 36)  # Font for the prompt text
-
-# Set transparency level (0-255, where 255 is fully opaque)
-minimap_alpha = 150  # 150 will give a semi-transparent effect
-
-# Variables for expanding the image
-expanding_image = False  # Track if the image is currently expanded
-expansion_scale = 0.0  # Start scale for the expansion animation
-target_scale = 0.5  # Target scale (50% of screen size)
-scaling_speed = 0.05  # Speed at which the image scales
-
-# Main game loop
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if keys[pygame.K_q]:
             running = False
 
-    # Get the state of all keys
-    keys = pygame.key.get_pressed()
+        # Handle movement and rotation logic
+        moving = False
+        if keys[pygame.K_w] and keys[pygame.K_d]:
+            image_rect.y -= move_speed
+            image_rect.x += move_speed
+            rotation_angle = 315
+            moving = True
+        elif keys[pygame.K_w] and keys[pygame.K_a]:
+            image_rect.y -= move_speed
+            image_rect.x -= move_speed
+            rotation_angle = 45
+            moving = True
+        elif keys[pygame.K_s] and keys[pygame.K_d]:
+            image_rect.y += move_speed
+            image_rect.x += move_speed
+            rotation_angle = 225
+            moving = True
+        elif keys[pygame.K_s] and keys[pygame.K_a]:
+            image_rect.y += move_speed
+            image_rect.x -= move_speed
+            rotation_angle = 135
+            moving = True
+        elif keys[pygame.K_w] and image_rect.top > 0:
+            image_rect.y -= move_speed
+            rotation_angle = 0
+            moving = True
+        elif keys[pygame.K_a] and image_rect.left > 0:
+            image_rect.x -= move_speed
+            rotation_angle = 90
+            moving = True
+        elif keys[pygame.K_s] and image_rect.bottom < large_image_height:
+            image_rect.y += move_speed
+            rotation_angle = 180
+            moving = True
+        elif keys[pygame.K_d] and image_rect.right < large_image_width:
+            image_rect.x += move_speed
+            rotation_angle = 270
+            moving = True
 
-    # Check for quitting the game
-    if keys[pygame.K_q]:  # Check if the 'Q' key is pressed
-        running = False
+        # Keep the camera centered on the player
+        camera_rect.center = image_rect.center
 
-    # Determine the direction of movement and adjust the rotation angle
-    moving = False
-    if keys[pygame.K_w] and image_rect.top > 0:  # Move up
-        image_rect.y -= move_speed
-        rotation_angle = 270  # Upwards
-        moving = True
-    if keys[pygame.K_a] and image_rect.left > 0:  # Move left
-        image_rect.x -= move_speed
-        rotation_angle = 0  # Left
-        moving = True
-    if keys[pygame.K_s] and image_rect.bottom < large_image_height:  # Move down
-        image_rect.y += move_speed
-        rotation_angle = 90  # Downwards
-        moving = True
-    if keys[pygame.K_d] and image_rect.right < large_image_width:  # Move right
-        image_rect.x += move_speed
-        rotation_angle = 180  # Right
-        moving = True
+        # Clamp the camera to the map edges
+        if camera_rect.left < 0:
+            camera_rect.left = 0
+        if camera_rect.right > large_image_width:
+            camera_rect.right = large_image_width
+        if camera_rect.top < 0:
+            camera_rect.top = 0
+        if camera_rect.bottom > large_image_height:
+            camera_rect.bottom = large_image_height
 
-    # Update the camera to follow the player
-    camera_rect.center = image_rect.center
+        screen.fill((0, 0, 0))  # Clear the screen
 
-    # Make sure the camera doesn't go out of the world bounds
-    if camera_rect.left < 0:
-        camera_rect.left = 0
-    if camera_rect.right > large_image_width:
-        camera_rect.right = large_image_width
-    if camera_rect.top < 0:
-        camera_rect.top = 0
-    if camera_rect.bottom > large_image_height:
-        camera_rect.bottom = large_image_height
+        # Draw the background map
+        screen.blit(large_image, (0 - camera_rect.left, 0 - camera_rect.top))
 
-    # Clear the screen
-    screen.fill((0, 0, 0))
+        # Animate the rocket if it's moving
+        if moving:
+            current_time = pygame.time.get_ticks()
+            if current_time - last_image_change > image_change_time:
+                image_index = (image_index + 1) % len(rocket_images)
+                last_image_change = current_time
 
-    # Blit only the portion of the large image that's within the smaller camera view
-    screen.blit(large_image, (0, 0), camera_rect)
-
-    # Rotate the rocket based on the movement direction
-    if moving:
-        current_time = pygame.time.get_ticks()  # Get the current time
-        if current_time - last_image_change > image_change_time:  # Check if enough time has passed
-            image_index = (image_index + 1) % len(rocket_images)  # Cycle through images
-            last_image_change = current_time  # Reset the last change time
-
-        # Rotate the current rocket image
+        # Rotate the rocket based on movement direction
         rotated_image = pygame.transform.rotate(rocket_images[image_index], rotation_angle)
         rotated_rect = rotated_image.get_rect(center=image_rect.center)
         screen.blit(rotated_image, rotated_rect.move(-camera_rect.left, -camera_rect.top))
-    else:
-        # If not moving, draw the rocket as is
-        screen.blit(rocket_images[image_index], image_rect.move(-camera_rect.left, -camera_rect.top))
 
-    # Create a transparent surface for the minimap
-    transparent_minimap = pygame.Surface((200, 150), pygame.SRCALPHA)
-    transparent_minimap.set_alpha(minimap_alpha)  # Apply transparency
+        # Display instruction text
+        screen.blit(instruction_text, (10, 10))
 
-    # Blit the minimap image onto the transparent surface
-    transparent_minimap.blit(minimap_image, (0, 0))
+        # Draw the minimap with transparency
+        transparent_minimap = pygame.Surface((500, 300), pygame.SRCALPHA)
+        transparent_minimap.set_alpha(minimap_alpha)
+        transparent_minimap.blit(minimap_image, (0, 0))
+        minimap_rect = pygame.Rect(screen_width - 410, 10, 400, 300)
+        screen.blit(transparent_minimap, minimap_rect.topleft)
 
-    # Blit the transparent minimap onto the screen
-    minimap_rect = pygame.Rect(screen_width - 210, 10, 200, 150)  # Position for the minimap
-    screen.blit(transparent_minimap, minimap_rect.topleft)
+        # Update the minimap player's position
+        minimap_scale_x = minimap_rect.width / large_image_width
+        minimap_scale_y = minimap_rect.height / large_image_height
+        minimap_player_x = int((image_rect.x * minimap_scale_x) + minimap_rect.x)
+        minimap_player_y = int((image_rect.y * minimap_scale_y) + minimap_rect.y)
 
-    # Calculate player's position on the minimap
-    minimap_scale_x = minimap_rect.width / large_image_width
-    minimap_scale_y = minimap_rect.height / large_image_height
+        arrow_rotated = pygame.transform.rotate(arrow_image, -rotation_angle)
+        arrow_rect = arrow_rotated.get_rect(center=(minimap_player_x, minimap_player_y))
+        screen.blit(arrow_rotated, arrow_rect.topleft)
 
-    minimap_player_x = int((image_rect.x * minimap_scale_x) + minimap_rect.x)
-    minimap_player_y = int((image_rect.y * minimap_scale_y) + minimap_rect.y)
+        # Check pixel color on the minimap to trigger interactions
+        minimap_player_pos = (minimap_player_x - minimap_rect.x, minimap_player_y - minimap_rect.y)
+        if 0 <= minimap_player_pos[0] < minimap_image.get_width() and 0 <= minimap_player_pos[1] < minimap_image.get_height():
+            current_pixel_color = minimap_image.get_at((minimap_player_pos[0], minimap_player_pos[1]))
+        else:
+            current_pixel_color = (0, 0, 0)
 
-    # Blit the arrow on the minimap
-    arrow_rotated = pygame.transform.rotate(arrow_image, -rotation_angle)  # Rotate arrow to match player direction
-    arrow_rect = arrow_rotated.get_rect(center=(minimap_player_x, minimap_player_y))
-    screen.blit(arrow_rotated, arrow_rect.topleft)
+        # Handle quadrant image display logic
+        if current_pixel_color[1] > 40:
+            prompt_visible = True
+            screen_center_x = screen_width // 2
+            screen_center_y = screen_height // 2
+            player_screen_x = image_rect.centerx - camera_rect.left
+            player_screen_y = image_rect.centery - camera_rect.top
 
-    # Detect the color of the pixel the player is standing on
-    minimap_player_pos = (minimap_player_x - minimap_rect.x, minimap_player_y - minimap_rect.y)  # Position on minimap image
-    if 0 <= minimap_player_pos[0] < minimap_image.get_width() and 0 <= minimap_player_pos[1] < minimap_image.get_height():
-        current_pixel_color = minimap_image.get_at((minimap_player_pos[0], minimap_player_pos[1]))  # Get pixel color
-    else:
-        current_pixel_color = (0, 0, 0)  # Default to black if out of bounds
+            if player_screen_x <= screen_center_x and player_screen_y <= screen_center_y:
+                popup_image = TopLeft_image
+            elif player_screen_x > screen_center_x and player_screen_y <= screen_center_y:
+                popup_image = TopRight_image
+            elif player_screen_x < screen_center_x and player_screen_y > screen_center_y:
+                popup_image = BottomLeft_image
+            elif player_screen_x > screen_center_x and player_screen_y > screen_center_y:
+                popup_image = BottomRight_image
+        else:
+            prompt_visible = False
 
-    # Check if the green component of the pixel color is greater than 40
-    if current_pixel_color[1] > 40:  # Green value is greater than 40
-        prompt_visible = True
-    else:
-        prompt_visible = False
+        # Display prompt and handle interaction
+        if prompt_visible and not expanding_image:
+            prompt_surface = font.render(prompt_text, True, (255, 255, 255))
+            screen.blit(prompt_surface, (10, screen_height - 40))
 
-    # Display prompt message if visible
-    if prompt_visible and not expanding_image:
-        prompt_surface = font.render(prompt_text, True, (255, 255, 255))  # Create text surface
-        screen.blit(prompt_surface, (10, screen_height - 40))  # Draw prompt text on screen
+            if keys[pygame.K_e]:
+                expanding_image = True
+                expansion_scale = 0.0
 
-        # Check for interaction (pressing "E")
-        if keys[pygame.K_e]:  
-            expanding_image = True
-            expansion_scale = 0.0  # Reset scale for the expansion animation
+        # Handle image expansion effect
+        if expanding_image:
+            expansion_scale += scaling_speed
+            if expansion_scale >= target_scale:
+                expansion_scale = target_scale
 
-    # If the image is expanding, animate it
-    if expanding_image:
-        # Increase the scale over time
-        expansion_scale += scaling_speed
-        if expansion_scale >= target_scale:  # Stop when it reaches the target size
-            expansion_scale = target_scale  # Clamp the value to the target scale
-        
-        # Scale the image
-        scaled_image = pygame.transform.scale(popup_image, 
-            (int(popup_image.get_width() * expansion_scale), int(popup_image.get_height() * expansion_scale)))
-        
-        # Center the scaled image
-        scaled_rect = scaled_image.get_rect(center=(screen_width // 2, screen_height // 2))
-        screen.blit(scaled_image, scaled_rect)
+            scaled_image = pygame.transform.scale(popup_image, (int(popup_image.get_width() * 0.43 * expansion_scale),
+                                                                int(popup_image.get_height() * 0.43 * expansion_scale)))
+            scaled_rect = scaled_image.get_rect(center=(screen_width // 2, screen_height // 2))
+            screen.blit(scaled_image, scaled_rect)
 
-    # If the player moves while the image is expanded, hide the image
-    if moving and expanding_image:
-        expanding_image = False
+        # Reset expansion if the player moves
+        if moving and expanding_image:
+            expanding_image = False
 
-    # Update the display
-    pygame.display.flip()
+        # Update the display and control frame rate
+        pygame.display.flip()
+        clock.tick(60)
 
-    # Control the frame rate
-    clock.tick(60)
+    pygame.quit()
+    sys.exit()
 
-# Quit Pygame
-pygame.quit()
-sys.exit()
+if __name__ == "__main__":
+    main()
